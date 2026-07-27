@@ -10,6 +10,7 @@ import { relativeTime } from '@/lib/feed';
 import { TAG_META, compactCount, type PostTag } from '@/lib/types';
 import { ProfileHeaderActions } from './profile-actions';
 import { ProfileTabs } from './profile-tabs';
+import { Avatar } from '@/components/ui/avatar';
 
 type Props = { params: Promise<{ handle: string }>; searchParams: Promise<{ tab?: string }> };
 
@@ -99,21 +100,17 @@ export default async function ProfilePage({ params, searchParams }: Props) {
           />
         </div>
         <div style={{ position: 'relative', zIndex: 1, padding: '0 26px 26px', marginTop: -42 }}>
-          <span
-            style={{
+          <div style={{
               width: 88,
               height: 88,
               borderRadius: 9999,
               border: '4px solid var(--card)',
-              background: profile.avatarColor,
-              color: '#fff',
-              font: '800 32px/1 var(--font-manrope), Manrope',
-              display: 'grid',
-              placeItems: 'center',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            {profile.initials}
-          </span>
+            <Avatar user={profile} />
+          </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
             <div>
