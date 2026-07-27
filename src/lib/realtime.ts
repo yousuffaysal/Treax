@@ -32,10 +32,11 @@ function pusher(): Pusher | null {
 
 export const realtimeAvailable = hasPusher;
 
-/** Private per-user channel. Authorised in /api/realtime/auth. */
-export const userChannel = (userId: string) => `private-user-${userId}`;
-/** Private per-conversation channel, for typing + delivery. */
-export const conversationChannel = (conversationId: string) => `private-conversation-${conversationId}`;
+/**
+ * Channel names are defined in `lib/realtime-names.ts` and re-exported here, so
+ * client components can import them without pulling in this module's secret.
+ */
+export { userChannelName as userChannel, conversationChannelName as conversationChannel } from '@/lib/realtime-names';
 
 export type RealtimeEvent =
   | { name: 'message:new'; data: { conversationId: string; messageId: string; senderId: string; body: string; createdAt: string } }
