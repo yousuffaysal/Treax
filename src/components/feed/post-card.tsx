@@ -54,7 +54,7 @@ export function PostCard({
   initialComments,
 }: {
   post: FeedPost;
-  viewer: { id: string; initials: string; avatarColor: string; avatarUrl?: string };
+  viewer: { id: string; initials: string; avatarColor: string; avatarUrl?: string | null };
   initialComments?: Comment[];
 }) {
   const { error } = useToast();
