@@ -14,7 +14,7 @@ import { addComment, toggleRespect } from '@/app/(app)/actions';
 type Comment = {
   id: string;
   body: string;
-  author: { id: string; name: string; handle: string; initials: string; avatarColor: string; avatarUrl?: string };
+  author: { id: string; name: string; handle: string; initials: string; avatarColor: string; avatarUrl?: string | null };
 };
 
 const actionButton: React.CSSProperties = {
