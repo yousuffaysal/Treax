@@ -38,14 +38,21 @@ describe('analyzeHeuristic — rejections', () => {
 });
 
 describe('analyzeHeuristic — acceptance', () => {
-  it('accepts the explainer page’s good example and scores it high', () => {
+  it('accepts the explainer page’s good example', () => {
     const verdict = analyzeHeuristic(
       'Launched Tuition Bridge in 3 DU halls. 60 students signed up and 14 tuitions matched in the first 48 hours.',
     );
     expect(verdict.ok).toBe(true);
     if (verdict.ok) {
-      expect(verdict.tag).toBe('shipped');
-      expect(verdict.score).toBeGreaterThanOrEqual(88);
+      // The explainer page labels this one "Launched · Milestone" and shows a
+      // score of 94 (Treax.dc.html:283-285), but those are hand-written display
+      // values. The real cascade tests `metric` before `shipped`, and
+      // "60 students" matches it, so a single tag of `metric` (Milestone) is
+      // what the prototype's own analyze() returns. The score likewise computes
+      // to 80: base 68 + 12 for containing a number, with no length bonus at
+      // 107 characters. We assert the behaviour, not the marketing copy.
+      expect(verdict.tag).toBe('metric');
+      expect(verdict.score).toBe(80);
     }
   });
 
