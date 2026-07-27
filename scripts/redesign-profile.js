@@ -1,168 +1,10 @@
-'use client';
+const fs = require('fs');
+const path = require('path');
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
-import { useSession } from 'next-auth/react';
-import { useToast } from '@/components/providers/toast-provider';
-import { CrossIcon, SparkIcon } from '@/components/ui/icons';
-import { MessageButton } from '@/components/messages/message-button';
-import { AVATAR_COLORS } from '@/lib/handle';
-import { toggleFollow } from '@/app/(app)/actions';
-import { saveProfile, suggestBio } from './actions';
+const filePath = path.join(__dirname, '../src/app/(app)/u/[handle]/profile-actions.tsx');
+let content = fs.readFileSync(filePath, 'utf-8');
 
-/**
- * Profile header buttons plus the edit sheet — Treax.dc.html:769-777 and the
- * edit modal. Saving updates the shell everywhere, live.
- */
-
-const BIO_MAX = 220;
-
-/** peTagPool — Treax.dc.html:2277. */
-const TAG_POOL = ['Mobility', 'Student startups', 'Dhaka builders', 'EdTech', 'AgriTech', 'Fintech', 'Design', 'AI tools'];
-
-/** peColorPool — Treax.dc.html:2278, extended to the full avatar palette. */
-const COLOR_NAMES: Record<string, string> = {
-  '#0e0f0c': 'Ink',
-  '#2ead4b': 'Leaf',
-  '#38c8ff': 'Sky',
-  '#d03238': 'Clay',
-  '#8b7bf0': 'Iris',
-  '#b86700': 'Amber',
-  '#163300': 'Forest',
-};
-
-type ProfileDraft = {
-  name: string;
-  handle: string;
-  university: string;
-  focus: string;
-  building: string;
-  bio: string;
-  seeking: string;
-  avatarColor: string; avatarUrl?: string | null; coverUrl?: string | null;
-  tags: string[];
-};
-
-const pillButton: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 7,
-  borderRadius: 9999,
-  padding: '12px 20px',
-  font: '600 15px/1 var(--font-inter), Inter, sans-serif',
-  cursor: 'pointer',
-};
-
-const fieldLabel: React.CSSProperties = {
-  display: 'block',
-  font: '600 13px/1 var(--font-inter), Inter, sans-serif',
-  color: 'var(--ink)',
-  marginBottom: 8,
-};
-
-const fieldInput: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--soft)',
-  border: '1px solid var(--border)',
-  borderRadius: 12,
-  padding: '12px 14px',
-  fontSize: 15,
-  color: 'var(--ink)',
-};
-
-export function ProfileHeaderActions({
-  isMe,
-  targetId,
-  targetHandle,
-  initialFollowing,
-  editLabel,
-  connectLabel,
-  messageLabel,
-  followLabel,
-  followingLabel,
-  profile,
-}: {
-  isMe: boolean;
-  targetId: string;
-  targetHandle: string;
-  initialFollowing: boolean;
-  editLabel: string;
-  connectLabel: string;
-  messageLabel: string;
-  followLabel: string;
-  followingLabel: string;
-  profile: ProfileDraft;
-}) {
-  const router = useRouter();
-  const { update } = useSession();
-  const { flash, error } = useToast();
-  const [following, setFollowing] = useState(initialFollowing);
-  const [editOpen, setEditOpen] = useState(false);
-  const [, startTransition] = useTransition();
-
-  function onFollow() {
-    startTransition(async () => {
-      const previous = following;
-      setFollowing(!previous);
-      const result = await toggleFollow(targetId);
-      if (result.ok) {
-        setFollowing(result.data.following);
-        flash(result.data.following ? `Connection request sent to ${profile.name}.` : 'Unfollowed.');
-      } else {
-        setFollowing(previous);
-        error(result.error);
-      }
-    });
-  }
-
-  if (!isMe) {
-    return (
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button
-          onClick={onFollow}
-          style={{
-            ...pillButton,
-            background: following ? 'var(--soft)' : 'var(--primary)',
-            color: following ? 'var(--body)' : '#163300',
-            border: 'none',
-          }}
-        >
-          {following ? followingLabel : `${connectLabel} · ${followLabel}`}
-        </button>
-        <MessageButton handle={targetHandle} label={messageLabel} />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button
-          onClick={() => setEditOpen(true)}
-          style={{ ...pillButton, background: 'var(--card)', color: 'var(--ink)', border: '1px solid var(--border-strong)', padding: '12px 22px' }}
-        >
-          {editLabel}
-        </button>
-      </div>
-      {editOpen ? (
-        <EditProfileSheet
-          initial={profile}
-          onClose={() => setEditOpen(false)}
-          onSaved={async (handle) => {
-            setEditOpen(false);
-            flash('Profile updated.');
-            // The handle is part of the JWT and every profile URL.
-            await update();
-            router.replace(`/u/${handle}`);
-            router.refresh();
-          }}
-        />
-      ) : null}
-    </>
-  );
-}
-
-
+const replacement = `
 function AnimatedInput({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   const [focused, setFocused] = useState(false);
   return (
@@ -560,3 +402,14 @@ function EditProfileSheet({
     </div>
   );
 }
+`;
+
+const index = content.indexOf('function EditProfileSheet');
+if (index === -1) {
+  console.error('Could not find function EditProfileSheet');
+  process.exit(1);
+}
+
+const newContent = content.slice(0, index) + replacement;
+fs.writeFileSync(filePath, newContent, 'utf-8');
+console.log('Successfully redesigned EditProfileSheet');
