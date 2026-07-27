@@ -17,7 +17,8 @@
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "account": "tsx scripts/create-account.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
