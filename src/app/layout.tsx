@@ -43,7 +43,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${fontVariables} sl-scroll${locale === 'bn' ? ' lang-bn' : ''}`}
       suppressHydrationWarning
     >
-      <body className="sl-m">
+      {/*
+        Browser extensions (ColorZilla, Grammarly, password managers) inject
+        attributes onto <body> before React hydrates — cz-shortcut-listen,
+        data-new-gr-c-s-check-loaded and friends. Those are outside our control
+        and harmless, so the warning is suppressed here as well as on <html>.
+        This only silences attribute mismatches on these two elements; a real
+        mismatch anywhere inside the tree still reports normally.
+      */}
+      <body className="sl-m" suppressHydrationWarning>
         <SessionProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <PreferencesProvider initialTheme={theme} initialLocale={locale}>
