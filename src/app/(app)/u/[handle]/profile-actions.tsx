@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/providers/toast-provider';
 import { CrossIcon, SparkIcon } from '@/components/ui/icons';
+import { MessageButton } from '@/components/messages/message-button';
 import { AVATAR_COLORS } from '@/lib/handle';
 import { toggleFollow } from '@/app/(app)/actions';
 import { saveProfile, suggestBio } from './actions';
@@ -128,12 +129,7 @@ export function ProfileHeaderActions({
         >
           {following ? followingLabel : `${connectLabel} · ${followLabel}`}
         </button>
-        <a
-          href={`/messages?to=${targetHandle}`}
-          style={{ ...pillButton, background: 'var(--card)', color: 'var(--ink)', border: '1px solid var(--border-strong)' }}
-        >
-          {messageLabel}
-        </a>
+        <MessageButton handle={targetHandle} label={messageLabel} />
       </div>
     );
   }

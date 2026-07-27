@@ -6,6 +6,7 @@ import { getRailData, getShellBadges } from '@/lib/shell-data';
 import { AppShell } from '@/components/layout/app-shell';
 import { ChipRow, EmptyState, PageHeader } from '@/components/ui/page-header';
 import { FollowButton } from '@/components/ui/follow-button';
+import { MessageButton } from '@/components/messages/message-button';
 import { SparkIcon } from '@/components/ui/icons';
 
 export const metadata: Metadata = { title: 'Team' };
@@ -121,19 +122,7 @@ export default async function TeamPage() {
                   </span>
                 </Link>
                 <p style={{ margin: '13px 0 14px', fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,.78)' }}>{reason}</p>
-                <a
-                  href={`/messages?to=${builder.handle}`}
-                  style={{
-                    display: 'inline-block',
-                    background: 'var(--primary)',
-                    color: '#163300',
-                    borderRadius: 9999,
-                    padding: '10px 18px',
-                    font: '700 13.5px/1 var(--font-inter), Inter, sans-serif',
-                  }}
-                >
-                  Request an intro
-                </a>
+                <MessageButton handle={builder.handle} label="Request an intro" variant="ghost" />
               </div>
             ))}
           </div>
@@ -228,19 +217,7 @@ export default async function TeamPage() {
 
               <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
                 <FollowButton targetId={b.id} initialFollowing={following.has(b.id)} />
-                <a
-                  href={`/messages?to=${b.handle}`}
-                  style={{
-                    background: 'var(--card)',
-                    color: 'var(--ink)',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: 9999,
-                    padding: '10px 18px',
-                    font: '600 13.5px/1 var(--font-inter), Inter, sans-serif',
-                  }}
-                >
-                  Message
-                </a>
+                <MessageButton handle={b.handle} variant="soft" />
               </div>
             </div>
           ))}

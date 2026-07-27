@@ -9,6 +9,7 @@ import {
   FilterStarIcon,
   GameIcon,
   PersonIcon,
+  MessageIcon,
   PlusIcon,
   ShieldIcon,
   StarSolidIcon,
@@ -107,6 +108,12 @@ export async function LeftRail({ viewer }: { viewer: Viewer }) {
             <PersonIcon size={18} />
           </span>
           My profile
+        </Link>
+        <Link href="/messages" style={railLink}>
+          <span style={{ color: 'var(--body)', display: 'grid', placeItems: 'center' }}>
+            <MessageIcon size={18} />
+          </span>
+          Messages
         </Link>
         <Link href="/ai/studio" style={railLink}>
           <span style={{ color: 'var(--body)', display: 'grid', placeItems: 'center' }}>

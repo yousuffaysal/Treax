@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useToast } from '@/components/providers/toast-provider';
 import { compactCount } from '@/lib/types';
 import { toggleFollow, toggleRespect } from '@/app/(app)/actions';
+import { MessageButton } from '@/components/messages/message-button';
 
 /**
  * The reader's interactive controls, in two placements: the sticky bar (share
@@ -142,26 +143,12 @@ export function PostActions({
       </button>
 
       {!isSelf ? (
-        <a
-          href={`/messages?to=${authorHandle}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'var(--card)',
-            color: 'var(--ink)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 9999,
-            padding: '12px 20px',
-            font: '600 14px/1 var(--font-inter), Inter, sans-serif',
-            cursor: 'pointer',
-          }}
-        >
+        <MessageButton handle={authorHandle}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           Message
-        </a>
+        </MessageButton>
       ) : null}
     </div>
   );
