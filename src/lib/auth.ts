@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { db } from '@/lib/db';
+import { authConfig } from '@/lib/auth.config';
 import type { Role } from '@/lib/types';
 
 declare module 'next-auth' {
@@ -27,12 +28,14 @@ const universitySsoSchema = z.object({
   ssoToken: z.string().min(1),
 });
 
+/**
+ * The full configuration: the edge-safe base from `auth.config.ts` plus the
+ * providers, which need Prisma and bcrypt and therefore cannot run in
+ * middleware. Both halves share one set of callbacks, so a session decoded in
+ * middleware and one decoded in a Server Component always agree.
+ */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: 'jwt' },
-  pages: {
-    signIn: '/login',
-    newUser: '/signup',
-  },
+  ...authConfig,
   providers: [
     Credentials({
       id: 'credentials',
