@@ -19,7 +19,7 @@ export default async function NotificationsPage() {
     getRailData(viewer),
     db.notification.findMany({
       where: { recipientId: viewer.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 50,
       select: {
         id: true,

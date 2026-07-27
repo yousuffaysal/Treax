@@ -16,7 +16,7 @@ export default async function LearnPage() {
     getRailData(viewer),
     db.learnResource.findMany({
       where: { published: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 40,
       select: { id: true, type: true, title: true, excerpt: true, worked: true, failed: true, readTime: true, authorName: true },
     }),

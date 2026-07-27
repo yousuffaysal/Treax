@@ -40,7 +40,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   const more = await db.post.findMany({
     where: { authorId: post.author.id, id: { not: post.id }, filterVerdict: 'ACCEPTED' },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 3,
     select: { id: true, body: true, tag: true, createdAt: true },
   });

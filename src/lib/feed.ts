@@ -154,7 +154,7 @@ export async function withFeedAd(posts: FeedPost[], isFirstPage: boolean): Promi
 
   const campaign = await db.adCampaign.findFirst({
     where: { active: true },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     select: { id: true, brand: true, title: true, body: true, cta: true, link: true },
   });
   if (!campaign) return rows;
@@ -206,7 +206,7 @@ export const getPostById = cache(async (id: string, viewerId: string) => {
       author: { select: { ...AUTHOR_SELECT, bio: true, focus: true, university: true, followerCount: true } },
       respects: { where: { userId: viewerId }, select: { id: true }, take: 1 },
       comments: {
-        orderBy: { createdAt: 'asc' },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           body: true,
@@ -223,7 +223,7 @@ export const getPostById = cache(async (id: string, viewerId: string) => {
 export async function getComments(postId: string) {
   return db.comment.findMany({
     where: { postId },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       body: true,

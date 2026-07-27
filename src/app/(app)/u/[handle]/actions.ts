@@ -24,6 +24,7 @@ const profileSchema = z.object({
   seeking: z.string().trim().max(120),
   avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Pick a colour from the list.'),
   tags: z.array(z.string().trim().min(1).max(40)).max(12),
+  coverUrl: z.string().url().nullable().optional(),
 });
 
 export async function saveProfile(input: z.infer<typeof profileSchema>): Promise<ActionResult<{ handle: string }>> {
@@ -51,6 +52,7 @@ export async function saveProfile(input: z.infer<typeof profileSchema>): Promise
         bio: data.bio || null,
         seeking: data.seeking || null,
         avatarColor: data.avatarColor,
+        coverUrl: data.coverUrl,
         tags: data.tags,
       },
     });

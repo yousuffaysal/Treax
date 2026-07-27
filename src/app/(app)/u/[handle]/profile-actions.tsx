@@ -39,7 +39,7 @@ type ProfileDraft = {
   building: string;
   bio: string;
   seeking: string;
-  avatarColor: string; avatarUrl?: string | null;
+  avatarColor: string; avatarUrl?: string | null; coverUrl?: string | null;
   tags: string[];
 };
 
@@ -176,7 +176,9 @@ function EditProfileSheet({
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
 
-  const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) =>
+    const [uploadingCover, setUploadingCover] = useState(false);
+  
+    const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
   const bioLeft = BIO_MAX - draft.bio.length;
@@ -191,6 +193,25 @@ function EditProfileSheet({
     setSuggesting(false);
     if (!result.ok) return error(result.error);
     set('bio', result.data.bio);
+  }
+
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    const body = new FormData();
+    body.append('file', file);
+    body.append('folder', 'profiles');
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      set('coverUrl', json.url);
+    } catch (err: any) {
+      error(err.message);
+    } finally {
+      setUploadingCover(false);
+    }
   }
 
   async function save() {
@@ -264,6 +285,46 @@ function EditProfileSheet({
                 onChange={(e) => set('handle', e.target.value)}
                 style={{ flex: 1, border: 'none', background: 'none', padding: '12px 6px', fontSize: 15, color: 'var(--ink)' }}
               />
+            </div>
+          </div>
+
+          <div>
+            <label style={fieldLabel}>Cover Image</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {draft.coverUrl ? (
+                <img src={draft.coverUrl} alt="Cover preview" style={{ width: 120, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+              ) : null}
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: 'var(--soft)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 9999,
+                  padding: '9px 16px',
+                  font: '600 13px/1 var(--font-inter), Inter, sans-serif',
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
+                  opacity: uploadingCover ? 0.7 : 1,
+                }}
+              >
+                {uploadingCover ? 'Uploading...' : draft.coverUrl ? 'Change cover' : 'Upload cover'}
+                <input type="file" accept="image/jpeg, image/png, image/webp" onChange={handleCoverUpload} disabled={uploadingCover} style={{ display: 'none' }} />
+              </label>
+              {draft.coverUrl && !uploadingCover ? (
+                <button
+                  onClick={() => set('coverUrl', null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--negative)',
+                    font: '600 13px/1 var(--font-inter), Inter, sans-serif',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Remove
+                </button>
+              ) : null}
             </div>
           </div>
 

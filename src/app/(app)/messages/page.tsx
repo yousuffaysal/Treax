@@ -34,7 +34,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               where: { userId: { not: viewer.id } },
               select: { user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, } } },
             },
-            messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { body: true, senderId: true, createdAt: true } },
+            messages: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1, select: { body: true, senderId: true, createdAt: true } },
           },
         },
       },

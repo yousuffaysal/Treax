@@ -55,6 +55,7 @@ model User {
   avatarColor String  @default("#0e0f0c")
   initials    String
   avatarUrl   String?
+  coverUrl    String?
 
   // Profile fields, all editable from the edit-profile sheet
   university String?

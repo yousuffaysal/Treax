@@ -57,7 +57,7 @@ export const getRailData = cache(async (viewer: Viewer): Promise<RailData> => {
     db.post.findMany({
       where: { authorId: viewer.id, filterVerdict: 'ACCEPTED', createdAt: { gte: weekStart } },
       select: { tag: true, body: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     }),
     db.gameScore.findFirst({
       orderBy: { score: 'desc' },

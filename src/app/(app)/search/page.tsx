@@ -40,7 +40,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     }),
     db.post.findMany({
       where: { filterVerdict: 'ACCEPTED', author: { suspended: false }, body: contains },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 8,
       select: {
         id: true,

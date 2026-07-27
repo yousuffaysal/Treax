@@ -18,7 +18,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const [messages, other] = await Promise.all([
     db.message.findMany({
       where: { conversationId: id },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       take: 200,
       select: { id: true, body: true, senderId: true, createdAt: true },
     }),

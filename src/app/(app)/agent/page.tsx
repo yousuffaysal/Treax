@@ -11,7 +11,7 @@ export default async function AgentPage() {
 
   const history = await db.agentCommand.findMany({
     where: { userId: viewer.id },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 12,
     select: { id: true, input: true, reply: true, allowed: true, succeeded: true },
   });

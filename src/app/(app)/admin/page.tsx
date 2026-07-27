@@ -46,7 +46,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     db.respect.count(),
     db.service.count({ where: { active: true } }),
     db.adCampaign.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: { id: true, brand: true, title: true, body: true, cta: true, impressions: true, clicks: true, spend: true, budget: true, active: true },
     }),
     db.moderationItem.count({ where: { verdict: 'PENDING' } }),
@@ -172,7 +172,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
 async function AdminUsersTab({ viewerId }: { viewerId: string }) {
   const users = await db.user.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 60,
     select: {
       id: true,
@@ -194,7 +194,7 @@ async function AdminUsersTab({ viewerId }: { viewerId: string }) {
 
 async function ModerationTab() {
   const items = await db.moderationItem.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 50,
     select: {
       id: true,
@@ -244,7 +244,7 @@ async function ModerationTab() {
 
 async function AuditTab() {
   const logs = await db.auditLog.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 80,
     select: { id: true, action: true, targetType: true, targetId: true, createdAt: true, actor: { select: { name: true, handle: true } } },
   });

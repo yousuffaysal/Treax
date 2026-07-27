@@ -41,7 +41,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       name: true,
       handle: true,
       initials: true,
-      avatarColor: true, avatarUrl: true,
+      avatarColor: true, avatarUrl: true, coverUrl: true,
       verified: true,
       suspended: true,
       building: true,
@@ -64,18 +64,18 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const [posts, services, blogs, following] = await Promise.all([
     db.post.findMany({
       where: { authorId: profile.id, filterVerdict: 'ACCEPTED' },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 20,
       select: { id: true, body: true, tag: true, shipScore: true, respectCount: true, commentCount: true, createdAt: true },
     }),
     db.service.findMany({
       where: { ownerId: profile.id, active: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: { id: true, title: true, description: true, price: true, cta: true, images: true },
     }),
     db.blogPost.findMany({
       where: { ownerId: profile.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: { id: true, title: true, excerpt: true, readTime: true, createdAt: true },
     }),
     isMe
@@ -90,14 +90,18 @@ export default async function ProfilePage({ params, searchParams }: Props) {
     <AppShell viewer={viewer} badges={badges} rails={rails}>
       {/* header card */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: 24, overflow: 'hidden', boxShadow: 'var(--elev)' }}>
-        <div style={{ height: 120, background: 'var(--primary)' }}>
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              background: 'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(22,51,0,.06) 18px,rgba(22,51,0,.06) 36px)',
-            }}
-          />
+        <div style={{ height: 120, background: 'var(--primary)', position: 'relative' }}>
+          {profile.coverUrl ? (
+            <img src={profile.coverUrl} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(22,51,0,.06) 18px,rgba(22,51,0,.06) 36px)',
+              }}
+            />
+          )}
         </div>
         <div style={{ position: 'relative', zIndex: 1, padding: '0 26px 26px', marginTop: -42 }}>
           <div style={{
@@ -175,6 +179,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
                 bio: profile.bio ?? '',
                 seeking: profile.seeking ?? '',
                 avatarColor: profile.avatarColor,
+                coverUrl: profile.coverUrl,
                 tags: profile.tags,
               }}
             />
