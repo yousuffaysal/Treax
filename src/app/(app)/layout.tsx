@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireViewer } from '@/lib/session';
 import { RealtimeProvider } from '@/components/providers/realtime-provider';
+import { ChatDockProvider } from '@/components/providers/chat-dock-provider';
 
 /**
  * Everything behind the app chrome. Individual pages compose <AppShell> or
@@ -14,5 +15,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // builder into an empty feed.
   if (!viewer.onboardingDone) redirect('/onboarding');
 
-  return <RealtimeProvider userId={viewer.id}>{children}</RealtimeProvider>;
+  // The chat dock lives here rather than on a page so it survives navigation —
+  // the prototype's panel floated above whatever screen you were on.
+  return (
+    <RealtimeProvider userId={viewer.id}>
+      <ChatDockProvider viewerId={viewer.id}>{children}</ChatDockProvider>
+    </RealtimeProvider>
+  );
 }

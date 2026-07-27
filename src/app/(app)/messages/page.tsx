@@ -1,89 +1,65 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireViewer } from '@/lib/session';
-import { getShellBadges } from '@/lib/shell-data';
-import { TopBar } from '@/components/layout/top-bar';
-import { openConversation } from './actions';
-import { MessagesClient } from './messages-client';
+import { getRailData, getShellBadges } from '@/lib/shell-data';
+import { AppShell } from '@/components/layout/app-shell';
+import { ThreadList } from './thread-list';
 
 export const metadata: Metadata = { title: 'Messages' };
 
-type Props = { searchParams: Promise<{ c?: string; to?: string }> };
-
 /**
- * Messages. Desktop shows a two-pane layout; below 860px the CSS in
- * globals.css turns the thread into a full-screen sheet.
+ * The inbox. Opening a thread raises the docked panel rather than navigating —
+ * matching the prototype, where chat floated over whatever screen you were on
+ * instead of being a screen of its own.
+ *
+ * `?to=handle` is still honoured so links from profiles and posts work when
+ * they arrive as a full navigation.
  */
-export default async function MessagesPage({ searchParams }: Props) {
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
   const viewer = await requireViewer();
-  const { c, to } = await searchParams;
+  const { to } = await searchParams;
 
-  // `?to=handle` comes from "Message" buttons around the app — resolve it to a
-  // conversation (creating one if needed) and switch to the canonical URL.
-  if (to) {
-    const result = await openConversation(to);
-    if (result.ok) redirect(`/messages?c=${result.data.conversationId}`);
-    redirect('/messages');
-  }
-
-  const badges = await getShellBadges(viewer.id);
-
-  const memberships = await db.conversationMember.findMany({
-    where: { userId: viewer.id },
-    select: {
-      conversationId: true,
-      lastReadAt: true,
-      conversation: {
-        select: {
-          id: true,
-          lastMessageAt: true,
-          members: {
-            where: { userId: { not: viewer.id } },
-            select: { user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, building: true } } },
+  const [badges, rails, memberships] = await Promise.all([
+    getShellBadges(viewer.id),
+    getRailData(viewer),
+    db.conversationMember.findMany({
+      where: { userId: viewer.id },
+      select: {
+        lastReadAt: true,
+        conversation: {
+          select: {
+            id: true,
+            lastMessageAt: true,
+            members: {
+              where: { userId: { not: viewer.id } },
+              select: { user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true } } },
+            },
+            messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { body: true, senderId: true, createdAt: true } },
           },
-          messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { body: true, senderId: true, createdAt: true } },
         },
       },
-    },
-  });
+    }),
+  ]);
 
   const threads = memberships
     .map((m) => {
       const other = m.conversation.members[0]?.user;
       const last = m.conversation.messages[0];
-      const unread = Boolean(last && last.senderId !== viewer.id && (!m.lastReadAt || last.createdAt > m.lastReadAt));
+      if (!other) return null;
       return {
         id: m.conversation.id,
-        other: other ?? null,
+        other,
         lastBody: last?.body ?? '',
         lastAt: (last?.createdAt ?? m.conversation.lastMessageAt).toISOString(),
-        unread,
+        unread: Boolean(last && last.senderId !== viewer.id && (!m.lastReadAt || last.createdAt > m.lastReadAt)),
       };
     })
-    .filter((t) => t.other !== null)
+    .filter((t): t is NonNullable<typeof t> => t !== null)
     .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 
-  const activeId = c && threads.some((t) => t.id === c) ? c : (threads[0]?.id ?? null);
-
-  const messages = activeId
-    ? await db.message.findMany({
-        where: { conversationId: activeId },
-        orderBy: { createdAt: 'asc' },
-        take: 200,
-        select: { id: true, body: true, senderId: true, createdAt: true },
-      })
-    : [];
-
   return (
-    <>
-      <TopBar viewer={viewer} badges={badges} />
-      <MessagesClient
-        viewer={{ id: viewer.id, initials: viewer.initials, avatarColor: viewer.avatarColor }}
-        threads={threads as never}
-        activeId={activeId}
-        messages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
-      />
-    </>
+    <AppShell viewer={viewer} badges={badges} rails={rails}>
+      <ThreadList threads={threads} openHandle={to ?? null} />
+    </AppShell>
   );
 }
