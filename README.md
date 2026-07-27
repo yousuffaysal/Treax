@@ -62,6 +62,26 @@ added later — nothing crashes without them.
 | `pnpm db:studio` | Prisma Studio |
 | `pnpm test` | Unit tests |
 | `pnpm test:e2e` | Playwright |
+| `pnpm account` | Create or update an account (see below) |
+
+### Creating accounts
+
+```bash
+pnpm account --email you@uni.edu --password 'a-strong-one' --name 'Your Name' --role ADMIN
+```
+
+`--role` is `BUILDER` (default), `EXPERT` or `ADMIN`. `--handle`, `--university`,
+`--building`, `--focus` and `--bio` are optional. Re-running with the same email updates
+that account, so it doubles as a password reset for local and staging databases.
+
+Accounts made this way skip the setup flow and land straight on the feed.
+
+### Neon connection strings
+
+`DATABASE_URL` should be the **pooled** string (the host containing `-pooler`) and
+`DIRECT_URL` the unpooled one. Prisma's migration engine needs a real session, which
+PgBouncer in transaction mode cannot provide, so migrations run over `DIRECT_URL` while the
+app itself uses the pool.
 
 ---
 
