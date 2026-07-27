@@ -180,7 +180,7 @@ async function AdminUsersTab({ viewerId }: { viewerId: string }) {
       handle: true,
       email: true,
       initials: true,
-      avatarColor: true,
+      avatarColor: true, avatarUrl: true,
       role: true,
       verified: true,
       suspended: true,

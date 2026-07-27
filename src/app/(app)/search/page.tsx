@@ -36,7 +36,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         OR: [{ name: contains }, { handle: contains }, { building: contains }, { focus: contains }, { university: contains }, { bio: contains }],
       },
       take: 8,
-      select: { id: true, name: true, handle: true, initials: true, avatarColor: true, focus: true, university: true, building: true },
+      select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, focus: true, university: true, building: true },
     }),
     db.post.findMany({
       where: { filterVerdict: 'ACCEPTED', author: { suspended: false }, body: contains },
@@ -47,7 +47,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         body: true,
         tag: true,
         createdAt: true,
-        author: { select: { name: true, handle: true, initials: true, avatarColor: true } },
+        author: { select: { name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, } },
       },
     }),
     db.service.findMany({

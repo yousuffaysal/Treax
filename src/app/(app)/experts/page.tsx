@@ -30,7 +30,7 @@ export default async function ExpertsPage() {
         availability: true,
         rating: true,
         sessionCount: true,
-        user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, verified: true } },
+        user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, verified: true } },
       },
     }),
   ]);

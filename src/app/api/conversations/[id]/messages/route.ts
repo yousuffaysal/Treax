@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }),
     db.conversationMember.findFirst({
       where: { conversationId: id, userId: { not: viewer.id } },
-      select: { user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true } } },
+      select: { user: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, } } },
     }),
   ]);
 

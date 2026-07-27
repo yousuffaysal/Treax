@@ -35,7 +35,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
         rating: true,
         orderCount: true,
         deliveryDays: true,
-        owner: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, university: true } },
+        owner: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, university: true } },
       },
     }),
   ]);

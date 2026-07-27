@@ -32,7 +32,7 @@ export function Composer({
   initialText = '',
   onClose,
 }: {
-  viewer: { name: string; initials: string; avatarColor: string; building: string | null };
+  viewer: { name: string; initials: string; avatarColor: string; avatarUrl?: string | null; building: string | null };
   initialText?: string;
   onClose: () => void;
 }) {

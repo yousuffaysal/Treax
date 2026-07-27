@@ -8,7 +8,7 @@ export type Viewer = {
   name: string;
   handle: string;
   role: Role;
-  avatarColor: string;
+  avatarColor: string; avatarUrl?: string | null;
   initials: string;
   building: string | null;
   university: string | null;

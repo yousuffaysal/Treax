@@ -40,7 +40,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       name: true,
       handle: true,
       initials: true,
-      avatarColor: true,
+      avatarColor: true, avatarUrl: true,
       verified: true,
       suspended: true,
       building: true,

@@ -22,7 +22,7 @@ export type FeedAuthor = {
   name: string;
   handle: string;
   initials: string;
-  avatarColor: string;
+  avatarColor: string; avatarUrl?: string | null;
   verified: boolean;
   building: string | null;
 };
@@ -59,7 +59,7 @@ const AUTHOR_SELECT = {
   name: true,
   handle: true,
   initials: true,
-  avatarColor: true,
+  avatarColor: true, avatarUrl: true,
   verified: true,
   building: true,
 } as const;
@@ -211,7 +211,7 @@ export const getPostById = cache(async (id: string, viewerId: string) => {
           id: true,
           body: true,
           createdAt: true,
-          author: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true } },
+          author: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, } },
         },
       },
     },
@@ -228,7 +228,7 @@ export async function getComments(postId: string) {
       id: true,
       body: true,
       createdAt: true,
-      author: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true } },
+      author: { select: { id: true, name: true, handle: true, initials: true, avatarColor: true, avatarUrl: true, } },
     },
   });
 }

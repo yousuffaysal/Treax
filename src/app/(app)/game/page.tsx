@@ -16,7 +16,7 @@ export default async function GamePage() {
     db.gameScore.findMany({
       orderBy: { score: 'desc' },
       take: 8,
-      select: { id: true, score: true, user: { select: { name: true, initials: true, avatarColor: true } } },
+      select: { id: true, score: true, user: { select: { name: true, initials: true, avatarColor: true, avatarUrl: true, } } },
     }),
     db.gameScore.findFirst({ where: { userId: viewer.id }, orderBy: { score: 'desc' }, select: { score: true } }),
   ]);
@@ -24,7 +24,7 @@ export default async function GamePage() {
   return (
     <AppShell viewer={viewer} badges={badges} rails={rails}>
       <SignalRush
-        viewer={{ initials: viewer.initials, avatarColor: viewer.avatarColor, name: viewer.name }}
+        viewer={{ initials: viewer.initials, avatarColor: viewer.avatarColor, avatarUrl: viewer.avatarUrl, name: viewer.name }}
         personalBest={best?.score ?? 0}
         leaderboard={leaderboard}
       />

@@ -29,7 +29,7 @@ export default async function LearnResourcePage({ params }: Props) {
       failed: true,
       readTime: true,
       authorName: true,
-      author: { select: { handle: true, initials: true, avatarColor: true, bio: true } },
+      author: { select: { handle: true, initials: true, avatarColor: true, avatarUrl: true, bio: true } },
     },
   });
   if (!resource) notFound();

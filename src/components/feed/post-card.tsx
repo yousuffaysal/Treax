@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useOptimistic, useState, useTransition } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { useToast } from '@/components/providers/toast-provider';
 import { TAG_META, compactCount, scoreStyle, type PostTag } from '@/lib/types';
 import { relativeTime, type FeedPost } from '@/lib/feed';
@@ -13,7 +14,7 @@ import { addComment, toggleRespect } from '@/app/(app)/actions';
 type Comment = {
   id: string;
   body: string;
-  author: { id: string; name: string; handle: string; initials: string; avatarColor: string };
+  author: { id: string; name: string; handle: string; initials: string; avatarColor: string; avatarUrl?: string };
 };
 
 const actionButton: React.CSSProperties = {
@@ -53,7 +54,7 @@ export function PostCard({
   initialComments,
 }: {
   post: FeedPost;
-  viewer: { id: string; initials: string; avatarColor: string };
+  viewer: { id: string; initials: string; avatarColor: string; avatarUrl?: string };
   initialComments?: Comment[];
 }) {
   const { error } = useToast();
@@ -104,7 +105,7 @@ export function PostCard({
     if (!result.ok) return error(result.error);
     setComments((cur) => [
       ...cur,
-      { id: result.data.id, body, author: { id: viewer.id, name: 'You', handle: '', initials: viewer.initials, avatarColor: viewer.avatarColor } },
+      { id: result.data.id, body, author: { id: viewer.id, name: 'You', handle: '', initials: viewer.initials, avatarColor: viewer.avatarColor, avatarUrl: viewer.avatarUrl } },
     ]);
     setDraft('');
   }
@@ -129,15 +130,13 @@ export function PostCard({
             width: 48,
             height: 48,
             borderRadius: 9999,
-            background: post.author.avatarColor,
-            color: '#fff',
-            font: '800 17px/1 var(--font-manrope), Manrope',
-            display: 'grid',
-            placeItems: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'block',
             flexShrink: 0,
           }}
         >
-          {post.author.initials}
+          <Avatar user={post.author} />
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -276,21 +275,9 @@ export function PostCard({
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {comments.map((c) => (
             <div key={c.id} style={{ display: 'flex', gap: 10 }}>
-              <span
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 9999,
-                  background: c.author.avatarColor,
-                  color: '#fff',
-                  font: '800 13px/1 var(--font-manrope), Manrope',
-                  display: 'grid',
-                  placeItems: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                {c.author.initials}
-              </span>
+              <Link href={`/u/${c.author.handle}`} style={{ width: 32, height: 32, borderRadius: 9999, position: 'relative', overflow: 'hidden', display: 'block', flexShrink: 0 }}>
+                <Avatar user={c.author} />
+              </Link>
               <div style={{ background: 'var(--soft)', borderRadius: 16, padding: '10px 14px', flex: 1 }}>
                 <div style={{ font: '700 13px/1 var(--font-inter), Inter, sans-serif', color: 'var(--ink)', marginBottom: 4 }}>
                   {c.author.name}
@@ -305,21 +292,9 @@ export function PostCard({
           ) : null}
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 9999,
-                background: viewer.avatarColor,
-                color: '#fff',
-                font: '800 13px/1 var(--font-manrope), Manrope',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {viewer.initials}
-            </span>
+            <div style={{ width: 32, height: 32, borderRadius: 9999, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+              <Avatar user={viewer} />
+            </div>
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}

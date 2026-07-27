@@ -38,7 +38,7 @@ export default async function TeamPage() {
       name: true,
       handle: true,
       initials: true,
-      avatarColor: true,
+      avatarColor: true, avatarUrl: true,
       verified: true,
       building: true,
       focus: true,
@@ -232,7 +232,7 @@ type Builder = {
   name: string;
   handle: string;
   initials: string;
-  avatarColor: string;
+  avatarColor: string; avatarUrl?: string | null;
   focus: string | null;
   university: string | null;
   seeking: string | null;

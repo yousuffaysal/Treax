@@ -26,7 +26,7 @@ export function AgentConsole({
   viewer,
   history,
 }: {
-  viewer: { name: string; initials: string; avatarColor: string; role: Role; handle: string };
+  viewer: { name: string; initials: string; avatarColor: string; avatarUrl?: string | null; role: Role; handle: string };
   history: Array<{ id: string; input: string; reply: string | null; allowed: boolean; succeeded: boolean }>;
 }) {
   const router = useRouter();

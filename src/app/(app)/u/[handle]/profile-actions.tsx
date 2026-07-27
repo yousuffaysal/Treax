@@ -39,7 +39,7 @@ type ProfileDraft = {
   building: string;
   bio: string;
   seeking: string;
-  avatarColor: string;
+  avatarColor: string; avatarUrl?: string | null;
   tags: string[];
 };
 

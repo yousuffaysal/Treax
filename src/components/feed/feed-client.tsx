@@ -13,7 +13,7 @@ import { recordAdClick, recordAdImpression } from '@/app/(app)/actions';
  * rendered rows. Data arrives already fetched from the server component.
  */
 
-type Viewer = { id: string; name: string; initials: string; avatarColor: string; building: string | null };
+type Viewer = { id: string; name: string; initials: string; avatarColor: string; avatarUrl?: string | null; building: string | null };
 
 const FILTER_KEYS: Record<FeedFilter, string> = {
   foryou: 'foryou',

@@ -18,7 +18,7 @@ export function SignalRush({
   personalBest,
   leaderboard,
 }: {
-  viewer: { initials: string; avatarColor: string; name: string };
+  viewer: { initials: string; avatarColor: string; avatarUrl?: string | null; name: string };
   personalBest: number;
   leaderboard: Array<{ id: string; score: number; user: { name: string; initials: string; avatarColor: string } }>;
 }) {

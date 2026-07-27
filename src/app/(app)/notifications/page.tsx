@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
         targetUrl: true,
         read: true,
         createdAt: true,
-        actor: { select: { handle: true, initials: true, avatarColor: true } },
+        actor: { select: { handle: true, initials: true, avatarColor: true, avatarUrl: true, } },
       },
     }),
   ]);

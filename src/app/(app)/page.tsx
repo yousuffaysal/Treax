@@ -32,7 +32,7 @@ async function FeedRows({
 }: {
   viewerId: string;
   filter: FeedFilter;
-  viewer: { id: string; name: string; initials: string; avatarColor: string; building: string | null };
+  viewer: { id: string; name: string; initials: string; avatarColor: string; avatarUrl?: string | null; building: string | null };
 }) {
   const t = await getTranslations();
   const { posts } = await getFeed({ viewerId, filter });
@@ -44,7 +44,7 @@ async function FeedRows({
         id: viewer.id,
         name: viewer.name,
         initials: viewer.initials,
-        avatarColor: viewer.avatarColor,
+        avatarColor: viewer.avatarColor, avatarUrl: viewer.avatarUrl,
         building: viewer.building,
       }}
       rows={rows}

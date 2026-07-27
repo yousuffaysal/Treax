@@ -2,28 +2,23 @@ import Image from 'next/image';
 
 interface AvatarProps {
   user: {
-    name: string;
+    name?: string;
     initials: string;
     avatarColor: string;
     avatarUrl?: string | null;
   };
-  size?: number;
 }
 
-export function Avatar({ user, size = 48 }: AvatarProps) {
+export function Avatar({ user }: AvatarProps) {
   if (user.avatarUrl) {
     return (
       <Image
         src={user.avatarUrl}
-        alt={user.name}
-        width={size}
-        height={size}
+        alt={user.name || user.initials}
+        fill
         style={{
-          width: size,
-          height: size,
           borderRadius: 9999,
           objectFit: 'cover',
-          flexShrink: 0,
         }}
       />
     );
@@ -32,15 +27,15 @@ export function Avatar({ user, size = 48 }: AvatarProps) {
   return (
     <div
       style={{
-        width: size,
-        height: size,
+        width: '100%',
+        height: '100%',
         borderRadius: 9999,
         background: user.avatarColor,
         color: '#fff',
-        font: `800 ${Math.max(12, size * 0.35)}px/1 var(--font-manrope), Manrope`,
-        display: 'grid',
-        placeItems: 'center',
-        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 800,
       }}
     >
       {user.initials}

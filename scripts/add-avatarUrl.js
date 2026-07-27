@@ -11,7 +11,7 @@ function walkDir(dir, callback) {
 }
 
 function processFiles() {
-  const srcDir = path.join(__dirname, 'src');
+  const srcDir = path.join(__dirname, '../src');
   
   walkDir(srcDir, (filePath) => {
     if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {

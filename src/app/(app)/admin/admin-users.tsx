@@ -12,7 +12,7 @@ type AdminUser = {
   handle: string;
   email: string;
   initials: string;
-  avatarColor: string;
+  avatarColor: string; avatarUrl?: string | null;
   role: string;
   verified: boolean;
   suspended: boolean;

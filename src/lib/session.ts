@@ -18,7 +18,7 @@ const VIEWER_SELECT = {
   name: true,
   handle: true,
   role: true,
-  avatarColor: true,
+  avatarColor: true, avatarUrl: true,
   initials: true,
   building: true,
   university: true,

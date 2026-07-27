@@ -18,7 +18,7 @@ export default async function AgentPage() {
 
   return (
     <AgentConsole
-      viewer={{ name: viewer.name, initials: viewer.initials, avatarColor: viewer.avatarColor, role: viewer.role, handle: viewer.handle }}
+      viewer={{ name: viewer.name, initials: viewer.initials, avatarColor: viewer.avatarColor, avatarUrl: viewer.avatarUrl, role: viewer.role, handle: viewer.handle }}
       history={history.reverse()}
     />
   );
