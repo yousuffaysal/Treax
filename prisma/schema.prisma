@@ -1,0 +1,594 @@
+// Treax — production schema.
+// Every model here backs something the prototype faked with local state.
+// Ids are cuid2. Indexes target the feed query, unread counts and handle lookups.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────── identity ────
+
+enum Role {
+  BUILDER
+  EXPERT
+  ADMIN
+}
+
+enum AccessLevel {
+  MEMBER
+  MENTOR
+  MODERATOR
+  SUSPENDED
+}
+
+enum Locale {
+  en
+  bn
+}
+
+enum Theme {
+  light
+  dark
+}
+
+model User {
+  id           String  @id @default(cuid(2))
+  name         String
+  handle       String  @unique
+  email        String  @unique
+  passwordHash String?
+
+  role   Role        @default(BUILDER)
+  access AccessLevel @default(MEMBER)
+
+  // Presentation — the prototype's avatar colour + initials pair
+  avatarColor String  @default("#0e0f0c")
+  initials    String
+  avatarUrl   String?
+
+  // Profile fields, all editable from the edit-profile sheet
+  university String?
+  department String?
+  gradYear   String?
+  focus      String? // "CSE student · product"
+  building   String?
+  bio        String? @db.VarChar(220)
+  seeking    String?
+  tags       String[] @default([])
+
+  verified  Boolean @default(false)
+  suspended Boolean @default(false)
+  badge     String?
+
+  // Denormalised counters — kept in step inside the same transaction as the
+  // write that moves them, so the feed never needs a COUNT per row.
+  streak        Int @default(0)
+  shipCount     Int @default(0)
+  respectCount  Int @default(0)
+  followerCount Int @default(0)
+
+  locale Locale @default(en)
+  theme  Theme  @default(light)
+
+  // Onboarding is resumable: each step persists as it is completed.
+  signupStep        Int      @default(0)
+  onboardingStep    Int      @default(0)
+  onboardingDone    Boolean  @default(false)
+  naturalFit        String[] @default([])
+  stage             String?
+  cadence           Int      @default(5)
+
+  lastPostedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  posts           Post[]
+  respects        Respect[]
+  comments        Comment[]
+  following       Follow[]        @relation("follower")
+  followers       Follow[]        @relation("following")
+  services        Service[]
+  serviceRequests ServiceRequest[] @relation("requester")
+  blogPosts       BlogPost[]
+  memberships     ConversationMember[]
+  messages        Message[]
+  notifications   Notification[]  @relation("recipient")
+  actedOn         Notification[]  @relation("actor")
+  expert          Expert?
+  bookings        Booking[]       @relation("bookedBy")
+  moderatedItems  ModerationItem[] @relation("reviewer")
+  moderationSubject ModerationItem[] @relation("subjectUser")
+  auditLogs       AuditLog[]
+  agentCommands   AgentCommand[]
+  campaigns       AdCampaign[]    @relation("campaignOwner")
+  adEvents        AdEvent[]
+  gameScores      GameScore[]
+  learnResources  LearnResource[]
+  billboards      Billboard[]
+  accounts        Account[]
+  sessions        Session[]
+
+  @@index([handle])
+  @@index([role])
+  @@index([createdAt])
+}
+
+// Auth.js adapter models (used by the university-SSO provider stub)
+
+model Account {
+  id                String  @id @default(cuid(2))
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid(2))
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────────────────────────── feed ────
+
+enum PostTag {
+  shipped
+  learned
+  failed
+  metric
+  feedback
+  seeking
+}
+
+enum FilterVerdict {
+  ACCEPTED
+  REJECTED
+}
+
+model Post {
+  id       String  @id @default(cuid(2))
+  authorId String
+  author   User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body     String  @db.Text
+  tag      PostTag
+  imageUrl String?
+
+  // The filter's decision, stored so moderation can audit it later.
+  shipScore     Int           @default(0)
+  filterVerdict FilterVerdict @default(ACCEPTED)
+  filterReason  String?
+  filterSource  String        @default("heuristic") // "llm" | "heuristic" | "llm+heuristic"
+
+  // Optional metric strip rendered under the body
+  metrics Json?
+
+  respectCount Int @default(0)
+  commentCount Int @default(0)
+  repostCount  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  respects       Respect[]
+  comments       Comment[]
+  moderationItem ModerationItem[]
+
+  // The feed reads accepted posts newest-first, optionally scoped by tag.
+  @@index([filterVerdict, createdAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@index([tag, createdAt(sort: Desc)])
+}
+
+model Respect {
+  id        String   @id @default(cuid(2))
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid(2))
+  postId    String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Follow {
+  id          String   @id @default(cuid(2))
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+// ────────────────────────────────────────────────────────────── marketplace ──
+
+model Service {
+  id      String @id @default(cuid(2))
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String   @db.Text
+  category    String?
+  price       String // free-form: "৳799", "৳300/hr" — matches the prototype
+  cta         String   @default("Request this")
+  images      String[] @default([])
+  deliveryDays Int     @default(3)
+  rating      Float    @default(0)
+  orderCount  Int      @default(0)
+  active      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requests ServiceRequest[]
+
+  @@index([ownerId])
+  @@index([active, createdAt(sort: Desc)])
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COMPLETED
+}
+
+model ServiceRequest {
+  id          String        @id @default(cuid(2))
+  serviceId   String
+  requesterId String
+  note        String?       @db.Text
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  requester User    @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, status])
+  @@index([requesterId])
+}
+
+model BlogPost {
+  id      String @id @default(cuid(2))
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String @db.Text
+  excerpt  String @db.Text
+  readTime String
+
+  respectCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────────────────── messaging ───
+
+model Conversation {
+  id            String   @id @default(cuid(2))
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  members  ConversationMember[]
+  messages Message[]
+
+  @@index([lastMessageAt(sort: Desc)])
+}
+
+model ConversationMember {
+  id             String    @id @default(cuid(2))
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  // Drives the unread badge: "my conversations, newest first".
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(cuid(2))
+  conversationId String
+  senderId       String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ──────────────────────────────────────────────────────────── notifications ──
+
+enum NotificationType {
+  RESPECT
+  COMMENT
+  FOLLOW
+  MESSAGE
+  MENTION
+  SERVICE_REQUEST
+  BOOKING
+  AI
+  MODERATION
+  BADGE
+  VERIFICATION
+}
+
+model Notification {
+  id          String           @id @default(cuid(2))
+  recipientId String
+  actorId     String?
+  type        NotificationType
+  body        String
+  targetUrl   String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient User  @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User? @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  // Unread badge count + the notifications list share this index.
+  @@index([recipientId, read, createdAt(sort: Desc)])
+}
+
+// ───────────────────────────────────────────────────────────────── experts ───
+
+model Expert {
+  id     String @id @default(cuid(2))
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title        String
+  company      String
+  bio          String   @db.Text
+  skills       String[] @default([])
+  rate         String // "Free for students" | "৳500 / 30 min"
+  free         Boolean  @default(false)
+  availability String // "Thu, 7:00 PM"
+  rating       Float    @default(0)
+  sessionCount Int      @default(0)
+  active       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  bookings Booking[]
+
+  @@index([active])
+}
+
+enum BookingStatus {
+  REQUESTED
+  CONFIRMED
+  DECLINED
+  DONE
+}
+
+model Booking {
+  id        String        @id @default(cuid(2))
+  expertId  String
+  userId    String
+  note      String?       @db.Text
+  slot      String
+  status    BookingStatus @default(REQUESTED)
+  createdAt DateTime      @default(now())
+
+  expert Expert @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  user   User   @relation("bookedBy", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expertId, status])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────── learn ───
+
+model LearnResource {
+  id       String @id @default(cuid(2))
+  type     String // Case study | Playbook | Founder story | Template | Deep dive
+  title    String
+  excerpt  String @db.Text
+  body     String @db.Text
+  worked   String
+  failed   String
+  readTime String
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String
+
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([published, createdAt(sort: Desc)])
+}
+
+// ───────────────────────────────────────────────────────────────────── ads ───
+
+model AdCampaign {
+  id    String @id @default(cuid(2))
+  brand String
+  title String
+  body  String @db.Text
+  cta   String @default("Get started")
+  link  String @default("")
+
+  impressions Int   @default(0)
+  clicks      Int   @default(0)
+  spend       Float @default(0)
+  budget      Float @default(0)
+  active      Boolean @default(true)
+
+  createdById String?
+  createdBy   User?   @relation("campaignOwner", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events AdEvent[]
+
+  @@index([active, createdAt(sort: Desc)])
+}
+
+enum AdEventType {
+  IMPRESSION
+  CLICK
+}
+
+model AdEvent {
+  id         String      @id @default(cuid(2))
+  campaignId String
+  userId     String?
+  type       AdEventType
+  createdAt  DateTime    @default(now())
+
+  campaign AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, type, createdAt])
+}
+
+/// Single-row table: the platform billboard every builder sees in the right rail.
+model Billboard {
+  id        String   @id @default("singleton")
+  imageUrl  String?
+  headline  String?
+  cta       String   @default("Learn more")
+  link      String   @default("")
+  updatedById String?
+  updatedBy User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt DateTime @updatedAt
+}
+
+// ────────────────────────────────────────────────────────────── moderation ───
+
+enum ModerationVerdict {
+  PENDING
+  ACCEPTED
+  BOUNCED
+}
+
+model ModerationItem {
+  id      String @id @default(cuid(2))
+  postId  String?
+  subjectUserId String?
+
+  kind    String // "post" | "verification"
+  verdict ModerationVerdict @default(PENDING)
+  reason  String?
+
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  post        Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  subjectUser User? @relation("subjectUser", fields: [subjectUserId], references: [id], onDelete: Cascade)
+  reviewedBy  User? @relation("reviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([verdict, createdAt])
+}
+
+model AuditLog {
+  id      String @id @default(cuid(2))
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  action     String // "user.verify", "campaign.publish", …
+  targetType String?
+  targetId   String?
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+}
+
+model AgentCommand {
+  id     String @id @default(cuid(2))
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  input     String  @db.Text
+  intent    String?
+  toolName  String?
+  arguments Json?
+  reply     String? @db.Text
+  allowed   Boolean @default(true)
+  succeeded Boolean @default(true)
+  errorText String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+/// Signal Rush leaderboard — powers the right rail's champion card.
+model GameScore {
+  id     String @id @default(cuid(2))
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  score     Int
+  solved    Int      @default(0)
+  missed    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([score(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+}
