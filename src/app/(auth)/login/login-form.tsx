@@ -14,6 +14,7 @@ import {
   authSecondaryButtonStyle,
 } from '@/components/auth/auth-layout';
 import { CheckIcon } from '@/components/ui/icons';
+import { safeNext } from '@/lib/safe-redirect';
 import { requestPasswordReset } from '../actions';
 
 /** Login — port of Treax.dc.html:1094-1113, backed by Auth.js Credentials. */
@@ -39,7 +40,7 @@ export function LoginForm({ next }: { next: string }) {
     }
     flash('Welcome back to Treax.');
     startTransition(() => {
-      router.replace(next);
+      router.replace(safeNext(next));
       router.refresh();
     });
   }
@@ -56,7 +57,7 @@ export function LoginForm({ next }: { next: string }) {
     }
     flash('Signed in with university login.');
     startTransition(() => {
-      router.replace(next);
+      router.replace(safeNext(next));
       router.refresh();
     });
   }
