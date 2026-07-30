@@ -88,6 +88,19 @@ export function ChatDock({
 
   useEffect(() => () => void (closeTimer.current && clearTimeout(closeTimer.current)), []);
 
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSent = useRef<number>(0);
+
+  // Popular builder & expression emojis for the quick picker
+  const EMOJI_CATEGORIES = [
+    { title: 'Reactions', emojis: ['😊', '🚀', '🔥', '👍', '❤️', '😂', '🎉', '💡', '👏', '🎯', '💯', '🙏'] },
+    { title: 'Builder & Tech', emojis: ['💻', '⚡', '🛠️', '✨', '📊', '📈', '🧠', '🌟', '🙌', '🤝', '💪', '🏆'] },
+    { title: 'Expressions', emojis: ['😍', '😎', '🥳', '🤔', '😅', '🤯', '🤩', '🤙', '🔥', '👀', '✨', '⚡'] },
+  ];
+
+  // Listen for incoming messages
   const onIncoming = useCallback((payload: unknown) => {
     const data = payload as { messageId: string; senderId: string; body: string; createdAt: string };
     if (!data?.messageId) return;
@@ -96,9 +109,21 @@ export function ChatDock({
         ? cur
         : [...cur, { id: data.messageId, body: data.body, senderId: data.senderId, createdAt: data.createdAt }],
     );
+    setIsTyping(false);
   }, []);
 
+  // Listen for typing indicator
+  const onTyping = useCallback((payload: unknown) => {
+    const data = payload as { userId: string };
+    if (data?.userId && data.userId !== viewerId) {
+      setIsTyping(true);
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => setIsTyping(false), 3000);
+    }
+  }, [viewerId]);
+
   useChannel(conversationChannelName(conversationId), 'message:new', onIncoming);
+  useChannel(conversationChannelName(conversationId), 'message:typing', onTyping);
 
   function requestClose() {
     if (closing) return;
@@ -106,11 +131,25 @@ export function ChatDock({
     closeTimer.current = setTimeout(onClose, CLOSE_MS);
   }
 
+  function handleDraftChange(val: string) {
+    setDraft(val);
+    const now = Date.now();
+    if (now - lastTypingSent.current > 2000) {
+      lastTypingSent.current = now;
+      void sendTyping(conversationId);
+    }
+  }
+
+  function addEmoji(emoji: string) {
+    setDraft((prev) => prev + emoji);
+  }
+
   async function send() {
     const body = draft.trim();
     if (!body || sending) return;
     setSending(true);
     setDraft('');
+    setShowEmojiPicker(false);
 
     const tempId = `temp-${Date.now()}`;
     setMessages((cur) => [...cur, { id: tempId, body, senderId: viewerId, createdAt: new Date().toISOString() }]);
@@ -125,6 +164,12 @@ export function ChatDock({
     }
     setMessages((cur) => cur.map((m) => (m.id === tempId ? { ...m, id: result.data.id, createdAt: result.data.createdAt } : m)));
   }
+
+  // Check if string contains only 1-3 emojis
+  const isOnlyEmoji = (str: string) => {
+    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]){1,3}$/gi;
+    return emojiRegex.test(str.trim());
+  };
 
   return (
     <div
@@ -253,7 +298,9 @@ export function ChatDock({
           >
             {person.name}
           </Link>
-          <div style={{ fontSize: 12, color: 'var(--positive)' }}>{t('online')}</div>
+          <div style={{ fontSize: 12, color: isTyping ? 'var(--primary-active, #9fe870)' : 'var(--positive)', transition: 'all 0.2s' }}>
+            {isTyping ? 'typing...' : t('online')}
+          </div>
         </div>
         <button
           onClick={requestClose}
@@ -322,6 +369,7 @@ export function ChatDock({
         ) : (
           messages.map((m) => {
             const mine = m.senderId === viewerId;
+            const bigEmoji = isOnlyEmoji(m.body);
             return (
               <div
                 key={m.id}
@@ -335,11 +383,11 @@ export function ChatDock({
               >
                 <div
                   style={{
-                    background: mine ? 'var(--primary)' : 'var(--soft)',
+                    background: bigEmoji ? 'transparent' : mine ? 'var(--primary)' : 'var(--soft)',
                     color: mine ? '#163300' : 'var(--ink)',
                     borderRadius: mine ? '18px 18px 5px 18px' : '18px 18px 18px 5px',
-                    padding: '9px 14px',
-                    fontSize: 14,
+                    padding: bigEmoji ? '4px 8px' : '9px 14px',
+                    fontSize: bigEmoji ? 28 : 14,
                     lineHeight: 1.45,
                     wordBreak: 'break-word',
                     overflowWrap: 'anywhere',
@@ -352,16 +400,97 @@ export function ChatDock({
             );
           })
         )}
+        {isTyping ? (
+          <div style={{ alignSelf: 'flex-start', background: 'var(--soft)', padding: '6px 12px', borderRadius: 14, fontSize: 12, color: 'var(--mute)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span>{person.name.split(' ')[0]} is typing</span>
+            <span style={{ animation: 'sl-pulse 1s infinite' }}>...</span>
+          </div>
+        ) : null}
       </div>
 
+      {/* Popover Emoji Picker */}
+      {showEmojiPicker ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 70,
+            left: 12,
+            right: 12,
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: 12,
+            boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+            zIndex: 90,
+            maxHeight: 220,
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--mute)' }}>Select Emoji</span>
+            <button
+              onClick={() => setShowEmojiPicker(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--mute)' }}
+            >
+              ✕
+            </button>
+          </div>
+          {EMOJI_CATEGORIES.map((cat) => (
+            <div key={cat.title} style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--mute)', marginBottom: 4 }}>{cat.title}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                {cat.emojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => addEmoji(emoji)}
+                    style={{
+                      background: 'var(--soft)',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: 6,
+                      fontSize: 18,
+                      cursor: 'pointer',
+                      transition: 'transform 0.1s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {/* composer */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={() => setShowEmojiPicker((prev) => !prev)}
+          title="Add Emoji"
+          aria-label="Add Emoji"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 9999,
+            border: 'none',
+            background: showEmojiPicker ? 'var(--primary)' : 'var(--soft)',
+            color: showEmojiPicker ? '#163300' : 'var(--ink)',
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            fontSize: 17,
+            transition: 'all 0.2s',
+          }}
+        >
+          😊
+        </button>
+
         <input
           value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            void sendTyping(conversationId);
-          }}
+          onChange={(e) => handleDraftChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -408,3 +537,4 @@ export function ChatDock({
     </div>
   );
 }
+
